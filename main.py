@@ -5,7 +5,6 @@ from sqlmodel import Session, select
 from sqlmodel.main import SQLModel
 
 from src.db_config import engine
-from src.jwt import get_current_user
 from src.models import CommonHeader, CreateSuggestion, Suggestion
 
 app = FastAPI(title="User Attention Service")
@@ -34,7 +33,6 @@ def read_root():
 @app.post("/suggestions")
 def create_suggestion(
     suggestion: CreateSuggestion,
-    user_id: str = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     db_suggestion = Suggestion(comment=suggestion.comment)

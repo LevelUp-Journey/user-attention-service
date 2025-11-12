@@ -6,6 +6,7 @@ from sqlmodel import Field, SQLModel
 
 
 class Suggestion(SQLModel, table=True):
+    __tablename__ = "suggestions"
     id: Optional[int] = Field(default=None, primary_key=True)
     comment: str = Field(max_length=255)
     created_at: datetime = Field(default_factory=datetime.utcnow)

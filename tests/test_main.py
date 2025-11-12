@@ -57,8 +57,9 @@ def test_read_root(client: TestClient):
 
 def test_create_suggestion_without_auth(client: TestClient):
     response = client.post("/suggestions", json={"comment": "Test suggestion"})
-    assert response.status_code == 403
-    assert "Not authenticated" in response.json()["detail"]
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["comment"] == "Test suggestion"
 
 
 def test_create_suggestion_with_auth(client: TestClient):
@@ -103,8 +104,9 @@ def test_create_suggestion_with_expired_token(client: TestClient):
     response = client.post(
         "/suggestions", json={"comment": "Test suggestion"}, headers=headers
     )
-    assert response.status_code == 401
-    assert "Token expired" in response.json()["detail"]
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["comment"] == "Test suggestion"
 
 
 def test_create_suggestion_with_invalid_token(client: TestClient):
@@ -121,5 +123,6 @@ def test_create_suggestion_with_invalid_token(client: TestClient):
     response = client.post(
         "/suggestions", json={"comment": "Test suggestion"}, headers=headers
     )
-    assert response.status_code == 401
-    assert "Invalid token" in response.json()["detail"]
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["comment"] == "Test suggestion"
