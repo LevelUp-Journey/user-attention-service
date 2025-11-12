@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
+from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
 
 
@@ -13,3 +14,7 @@ class Suggestion(SQLModel, table=True):
 
 class CreateSuggestion(SQLModel):
     comment: str = Field(max_length=255)
+
+
+class CommonHeader(BaseModel):
+    Authorization: str = Field(max_length=255)

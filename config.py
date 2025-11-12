@@ -10,6 +10,8 @@ class Settings:
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", "postgresql://admin:admin@localhost:5432/suggestions"
     )
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "your-secret-key-here")
+    JWT_ALGORITHM: str = "HS256"
 
 
 settings = Settings()
