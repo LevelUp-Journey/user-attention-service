@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Generator
 
 from fastapi import Depends, FastAPI, Header
 from sqlmodel import Session, select
@@ -8,9 +8,6 @@ from src.db_config import engine
 from src.models import CommonHeader, CreateSuggestion, Suggestion
 
 app = FastAPI(title="User Attention Service")
-
-
-from typing import Generator
 
 
 def get_session() -> Generator[Session, None, None]:
