@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header
-from sqlmodel import Session
+from sqlmodel import Session, select
 from sqlmodel.main import SQLModel
 
 from src.db_config import engine
@@ -9,6 +9,14 @@ from src.jwt import get_current_user
 from src.models import CommonHeader, CreateSuggestion, Suggestion
 
 app = FastAPI(title="User Attention Service")
+
+
+from typing import Generator
+
+
+def get_session() -> Generator[Session, None, None]:
+    with Session(engine) as session:
+        yield session
 
 
 # Configuration for database
@@ -25,21 +33,23 @@ def read_root():
 
 @app.post("/suggestions")
 def create_suggestion(
-    suggestion: CreateSuggestion, user_id: str = Depends(get_current_user)
+    suggestion: CreateSuggestion,
+    user_id: str = Depends(get_current_user),
+    session: Session = Depends(get_session),
 ):
-    with Session(engine) as session:
-        db_suggestion = Suggestion(comment=suggestion.comment)
+    db_suggestion = Suggestion(comment=suggestion.comment)
 
-        session.add(db_suggestion)
-        session.commit()
+    session.add(db_suggestion)
+    session.commit()
 
-        session.refresh(db_suggestion)
+    session.refresh(db_suggestion)
 
-        return {"data": db_suggestion}
+    return {"data": db_suggestion}
 
 
 @app.get("/suggestions")
-def read_suggestions(headers: Annotated[CommonHeader, Header()]):
-    with Session(engine) as session:
-        db_suggestions = session.query(Suggestion).all()
-        return {"data": db_suggestions, "headers": headers}
+def read_suggestions(
+    headers: Annotated[CommonHeader, Header()], session: Session = Depends(get_session)
+):
+    db_suggestions = session.exec(select(Suggestion)).all()
+    return {"data": db_suggestions, "headers": headers}
