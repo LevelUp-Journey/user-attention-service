@@ -83,17 +83,20 @@ async def get_service_url(app_name: str) -> str | None:
 async def startup():
     SQLModel.metadata.create_all(engine)
     print("Database tables created")
-    await register_with_eureka()
-    # Start heartbeat in a thread
-    threading.Thread(target=send_heartbeat, daemon=True).start()
+    try:
+        await register_with_eureka()
+        # Start heartbeat in a thread
+        threading.Thread(target=send_heartbeat, daemon=True).start()
+    except Exception as e:
+        print(f"Failed to register with Eureka: {e}")
 
 
-@app.get("/")
+@app.get("/api/v1/user-services")
 def read_root():
     return {"hello": "world"}
 
 
-@app.post("/suggestions")
+@app.post("/api/v1/suggestions")
 def create_suggestion(
     suggestion: CreateSuggestion,
     session: Session = Depends(get_session),
@@ -122,3 +125,9 @@ async def discover_service(app_name: str):
     if url:
         return {"service_url": url}
     return {"error": "Service not found"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=settings.PORT)
