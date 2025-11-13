@@ -11,7 +11,7 @@ class Settings:
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET", "your-secret-key-here")
     JWT_ALGORITHM: str = "HS256"
     EUREKA_SERVER: str = os.getenv("EUREKA_SERVER", "http://localhost:8761/eureka")
-    APP_NAME: str = os.getenv("APP_NAME", "USER-ATTENTION-SERVICE")
+    APP_NAME: str = os.getenv("APP_NAME", "user-attention-service")
     PORT: int = int(os.getenv("PORT", "8000"))
 
 
