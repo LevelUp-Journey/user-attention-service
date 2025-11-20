@@ -23,13 +23,35 @@ def get_session() -> Generator[Session, None, None]:
 
 async def register_with_eureka():
     hostname = socket.gethostname()
-    ip = socket.gethostbyname(hostname)
+
+    # Obtener IP pública o IP local correcta
+    try:
+        # Intentar obtener la IP pública
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get("https://api.ipify.org?format=text")
+            ip = response.text.strip()
+            print(f"Using public IP: {ip}")
+    except Exception as e:
+        print(f"Could not get public IP, using local IP. Error: {e}")
+        # Fallback: obtener IP local que se usa para conectarse al exterior
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+        except Exception:
+            ip = socket.gethostbyname(hostname)
+        finally:
+            s.close()
+        print(f"Using local IP: {ip}")
+
+    app_name_upper = settings.APP_NAME.upper()
+    instance_id = f"{ip}:{app_name_upper}:{settings.PORT}"
 
     data = f"""<?xml version="1.0" encoding="UTF-8"?>
 <instance>
-    <instanceId>{hostname}:{settings.APP_NAME}:{settings.PORT}</instanceId>
-    <hostName>{hostname}</hostName>
-    <app>{settings.APP_NAME}</app>
+    <instanceId>{instance_id}</instanceId>
+    <hostName>{ip}</hostName>
+    <app>{app_name_upper}</app>
     <ipAddr>{ip}</ipAddr>
     <status>UP</status>
     <port enabled="true">{settings.PORT}</port>
@@ -41,22 +63,43 @@ async def register_with_eureka():
     headers = {"Content-Type": "application/xml"}
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            f"{settings.EUREKA_SERVER}/apps/{settings.APP_NAME}",
+            f"{settings.EUREKA_SERVER}/apps/{app_name_upper}",
             content=data,
             headers=headers,
         )
-        print("Eureka registration status:", response.status_code)
+        print(f"Eureka registration status: {response.status_code}")
+        print(f"Registered as: {app_name_upper} with instance ID: {instance_id}")
 
 
 def send_heartbeat():
-    hostname = socket.gethostname()
+    # Obtener IP local/pública
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            response = client.get("https://api.ipify.org?format=text")
+            ip = response.text.strip()
+    except Exception:
+        # Fallback a IP local
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            s.connect(("8.8.8.8", 80))
+            ip = s.getsockname()[0]
+        except Exception:
+            ip = socket.gethostbyname(socket.gethostname())
+        finally:
+            s.close()
+
+    app_name_upper = settings.APP_NAME.upper()
+    instance_id = f"{ip}:{app_name_upper}:{settings.PORT}"
+
     while True:
         try:
             with httpx.Client() as client:
                 response = client.put(
-                    f"{settings.EUREKA_SERVER}/apps/{settings.APP_NAME}/{hostname}:{settings.APP_NAME}:{settings.PORT}"
+                    f"{settings.EUREKA_SERVER}/apps/{app_name_upper}/{instance_id}"
                 )
-                print("Heartbeat sent, status:", response.status_code)
+                print(
+                    f"Heartbeat sent to {app_name_upper}, status:", response.status_code
+                )
         except Exception as e:
             print("Heartbeat failed:", e)
         time.sleep(30)
