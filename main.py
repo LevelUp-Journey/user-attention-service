@@ -111,7 +111,7 @@ def create_suggestion(
     return {"data": db_suggestion}
 
 
-@app.get("/suggestions")
+@app.get("/api/v1/suggestions")
 def read_suggestions(
     headers: Annotated[CommonHeader, Header()], session: Session = Depends(get_session)
 ):
